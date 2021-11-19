@@ -1,0 +1,207 @@
+version: "3.7"
+services:
+  minidlna:
+    container_name: minidlna
+    image: vladgh/minidlna:latest
+    environment:
+      - MINIDLNA_MEDIA_DIR=/media
+      - MINIDLNA_FRIENDLY_NAME=${DLNA_DEVICE_NAME}
+    volumes:
+      - ${MOUNTING_POINT}:/media
+    network_mode: host
+    restart: "no"
+    labels:
+      - "traefik.enable=false"
+
+  jellyfin:
+    container_name: jellyfin
+    image: jellyfin/jellyfin:latest
+    ports:
+      - 8096:8096
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - ${MOUNTING_POINT}:/media
+      - /etc/localtime:/etc/localtime:ro
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${HTTP_HOST}`)"
+      - "traefik.http.routers.jellyfin.tls=true"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=lets-encrypt"
+      - "traefik.http.routers.jellyfin.middlewares=simpleauth@file"
+      - "traefik.port=8096"
+    networks:
+      - internal
+      - web
+
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:latest
+    ports:
+      - 8989:8989
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - ./sonarr:/config
+      - ${MOUNTING_POINT}:/media
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - jackett
+      - deluge
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${HTTP_HOST}`)"
+      - "traefik.http.routers.sonarr.tls=true"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.middlewares=simpleauth@file"
+      - "traefik.http.routers.sonarr.tls.certresolver=lets-encrypt"
+      - "traefik.port=8989"
+    networks:
+      - internal
+      - web
+
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:develop
+    ports:
+      - 7878:7878
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - ./radarr:/config
+      - ${MOUNTING_POINT}:/media
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - jackett
+      - deluge
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${HTTP_HOST}`)"
+      - "traefik.http.routers.radarr.tls=true"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.middlewares=simpleauth@file"
+      - "traefik.http.routers.radarr.tls.certresolver=lets-encrypt"
+      - "traefik.port=7878"
+    networks:
+      - internal
+      - web
+
+  ombi:
+    image: linuxserver/ombi:latest
+    container_name: ombi
+    ports:
+      - 3579:3579
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./ombi:/config
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - radarr
+      - sonarr
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ombi.rule=Host(`ombi.${HTTP_HOST}`)"
+      - "traefik.http.routers.ombi.tls=true"
+      - "traefik.http.routers.ombi.entrypoints=websecure"
+      - "traefik.http.routers.ombi.middlewares=simpleauth@file"
+      - "traefik.http.routers.ombi.tls.certresolver=lets-encrypt"
+      - "traefik.port=3579"
+    networks:
+      - internal
+      - web
+
+  deluge:
+    container_name: deluge
+    image: linuxserver/deluge:latest
+    restart: "no"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - DELUGE_LOGLEVEL=info
+    volumes:
+      - ${MOUNTING_POINT}/${DOWNLOAD_FOLDER}:/downloads
+      - ./deluge:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 8112:8112
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8112"
+      - "traefik.http.routers.deluge.rule=Host(`deluge.${HTTP_HOST}`)"
+      - "traefik.http.routers.deluge.tls=true"
+      - "traefik.http.routers.deluge.entrypoints=websecure"
+      - "traefik.http.routers.deluge.middlewares=simpleauth@file"
+      - "traefik.http.routers.deluge.tls.certresolver=lets-encrypt"
+    networks:
+      - internal
+      - web
+
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    ports:
+      - 9117:9117
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./jackett:/config
+      - ${MOUNTING_POINT}:/media
+      - /etc/localtime:/etc/localtime:ro
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.${HTTP_HOST}`)"
+      - "traefik.http.routers.jackett.tls=true"
+      - "traefik.http.routers.jackett.entrypoints=websecure"
+      - "traefik.http.routers.jackett.middlewares=simpleauth@file"
+      - "traefik.http.routers.jackett.tls.certresolver=lets-encrypt"
+      - "traefik.port=9117"
+    networks:
+      - internal
+      - web
+
+  bazarr:
+    image: linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - UMASK_SET=022 #optional
+    volumes:
+      - ./bazarr:/config
+      - ${MOUNTING_POINT}:/media
+    ports:
+      - 6767:6767
+    restart: "no"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${HTTP_HOST}`)"
+      - "traefik.http.routers.bazarr.tls=true"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.middlewares=simpleauth@file"
+      - "traefik.http.routers.bazarr.tls.certresolver=lets-encrypt"
+      - "traefik.port=6767"
+    networks:
+      - internal
+      - web
+
+networks:
+  web:
+    external: true
+  internal:
+    external: false
+    driver: bridge
