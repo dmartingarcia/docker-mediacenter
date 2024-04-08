@@ -1,18 +1,5 @@
 version: "3.7"
 services:
-  minidlna:
-    container_name: minidlna
-    image: vladgh/minidlna:latest
-    environment:
-      - MINIDLNA_MEDIA_DIR=/media
-      - MINIDLNA_FRIENDLY_NAME=${DLNA_DEVICE_NAME}
-    volumes:
-      - ${MOUNTING_POINT}:/media
-    network_mode: host
-    restart: "unless-stopped"
-    labels:
-      - "traefik.enable=false"
-
   jellyfin:
     container_name: jellyfin
     image: jellyfin/jellyfin:latest
