@@ -1,2 +1,9 @@
 *.jpg
 \.env
+bazarr/
+deluge/
+jackett/
+jellyfin/
+ombi/
+radarr/
+sonarr/

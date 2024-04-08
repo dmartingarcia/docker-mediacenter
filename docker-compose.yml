@@ -9,7 +9,7 @@ services:
     volumes:
       - ${MOUNTING_POINT}:/media
     network_mode: host
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=false"
 
@@ -23,7 +23,7 @@ services:
       - ./jellyfin/cache:/cache
       - ${MOUNTING_POINT}:/media
       - /etc/localtime:/etc/localtime:ro
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${HTTP_HOST}`)"
@@ -52,7 +52,7 @@ services:
     depends_on:
       - jackett
       - deluge
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr.${HTTP_HOST}`)"
@@ -81,7 +81,7 @@ services:
     depends_on:
       - jackett
       - deluge
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.${HTTP_HOST}`)"
@@ -108,7 +108,7 @@ services:
     depends_on:
       - radarr
       - sonarr
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ombi.rule=Host(`ombi.${HTTP_HOST}`)"
@@ -124,7 +124,7 @@ services:
   deluge:
     container_name: deluge
     image: linuxserver/deluge:latest
-    restart: "no"
+    restart: "unless-stopped"
     environment:
       - PUID=1000
       - PGID=1000
@@ -160,7 +160,7 @@ services:
       - ./jackett:/config
       - ${MOUNTING_POINT}:/media
       - /etc/localtime:/etc/localtime:ro
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jackett.rule=Host(`jackett.${HTTP_HOST}`)"
@@ -186,7 +186,7 @@ services:
       - ${MOUNTING_POINT}:/media
     ports:
       - 6767:6767
-    restart: "no"
+    restart: "unless-stopped"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr.rule=Host(`bazarr.${HTTP_HOST}`)"
