@@ -16,6 +16,8 @@ services:
   jellyfin:
     container_name: jellyfin
     image: jellyfin/jellyfin:latest
+    group_add:
+      - ${RENDER_ID}
     ports:
       - 8096:8096
     devices:
@@ -37,6 +39,7 @@ services:
     networks:
       - internal
       - web
+      - macvlan
 
   sonarr:
     container_name: sonarr
@@ -207,3 +210,11 @@ networks:
   internal:
     external: false
     driver: bridge
+  macvlan:
+    driver: macvlan
+    driver_opts:
+      parent: enp2s0 # replace with your host interface / vlan to use
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24 # docker will assign ip addresses from this subnet,
+                                      # check your DHCP configuration
